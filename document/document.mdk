@@ -19,7 +19,7 @@ Enjoy!
 
 # ssh
 ```
-   ssh -i .\pem\blog_ub.pem ec2-user@13.231.37.211
+   ssh -i .\pem\blog_ub.pem ec2-user@{ip}
 ``` 
 
 
