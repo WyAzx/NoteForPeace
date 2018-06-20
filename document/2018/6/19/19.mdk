@@ -174,3 +174,67 @@ Docker 镜像是一个特殊的文件系统，除了提供容器运行时所需�
 
 * 此外，使用 docker commit 意味着所有对镜像的操作都是黑箱操作，生成的镜像也被称为黑箱镜像，换句话说，就是除了制作镜像的人知道执行过什么命令、怎么生成的镜像，别人根本无从得知。
 
+### Dockerfile 构建镜像
+Dcokerfile可以通过From引入基础镜像，在其上进行定制。构建自己的镜像
+```
+  FROM nginx
+  RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
+```
+
+**基本指令**
+
+* FROM
+
+* RUN
+
+  `shell`格式 :`RUN <命令>`
+  
+  `exec`格式: `RUN ["可执行文件", "参数1", "参数2"]`
+  
+
+错误的示范
+```
+  FROM debian:jessie
+
+  RUN apt-get update
+  RUN apt-get install -y gcc libc6-dev make
+  RUN wget -O redis.tar.gz "http://download.redis.io/releases/redis-3.2.5.tar.gz"
+  RUN mkdir -p /usr/src/redis
+  RUN tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1
+  RUN make -C /usr/src/redis
+  RUN make -C /usr/src/redis install
+```
+正确的示范
+```
+  FROM debian:jessie
+
+  RUN buildDeps='gcc libc6-dev make' \
+    && apt-get update \
+    && apt-get install -y $buildDeps \
+    && wget -O redis.tar.gz "http://download.redis.io/releases/redis-3.2.5.tar.gz" \
+    && mkdir -p /usr/src/redis \
+    && tar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1 \
+    && make -C /usr/src/redis \
+    && make -C /usr/src/redis install \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm redis.tar.gz \
+    && rm -r /usr/src/redis \
+    && apt-get purge -y --auto-remove $buildDeps
+```
+构建镜像
+```
+  $ docker build -t nginx:v3 .
+```
+
+* COPY 和 ADD
+
+区别在于ADD可以自动解压压缩文件、从url下载文件（不常用）。
+
+仅仅在需要解压时使用ADD命令，参阅 [Dockerfile best practice]
+
+[Dockerfile best practice]: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
+* CMD
+
+之前介绍容器的时候曾经说过，Docker 不是虚拟机，容器就是进程。既然是进程，那么在启动容器的时候，需要指定所运行的程序及参数。CMD 指令就是用于指定默认的容器主进程的启动命令的。
+
